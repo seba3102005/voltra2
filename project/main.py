@@ -3,28 +3,40 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import sqlite3
-import os
 from pathlib import Path
 
 app = FastAPI()
 
-
+# ======================
+# BASE PATH (important for Vercel + local)
+# ======================
 BASE_DIR = Path(__file__).resolve().parent
 
+# ======================
+# Database path (ONE SOURCE OF TRUTH)
+# ======================
+DB_PATH = BASE_DIR / "database.db"
+
+# ======================
+# Templates
+# ======================
+templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+
+# ======================
+# Static files
+# ======================
 app.mount(
     "/static",
     StaticFiles(directory=str(BASE_DIR / "static")),
     name="static"
 )
-templates = Jinja2Templates(directory="templates")
 
-
+# ======================
+# INIT DB
+# ======================
 def init_db():
-
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    DB_PATH = os.path.join(BASE_DIR, "database.db")
-
     conn = sqlite3.connect(DB_PATH)
+
     conn.execute("""
     CREATE TABLE IF NOT EXISTS emails (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -39,7 +51,9 @@ def init_db():
 
 init_db()
 
-
+# ======================
+# HOME PAGE
+# ======================
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
     return templates.TemplateResponse(
@@ -47,10 +61,12 @@ def home(request: Request):
         {"request": request}
     )
 
-
+# ======================
+# SUBMIT EMAIL
+# ======================
 @app.post("/submit-email")
 def submit_email(email: str = Form(...)):
-    conn = sqlite3.connect("database.db")
+    conn = sqlite3.connect(DB_PATH)
 
     conn.execute(
         "INSERT INTO emails (email) VALUES (?)",
@@ -65,18 +81,22 @@ def submit_email(email: str = Form(...)):
         status_code=303
     )
 
-
+# ======================
+# RESULT PAGE (404 STYLE)
+# ======================
 @app.get("/result", response_class=HTMLResponse)
-def not_found(request: Request):
+def result(request: Request):
     return templates.TemplateResponse(
         "404.html",
         {"request": request}
     )
 
-
+# ======================
+# VIEW EMAILS (ADMIN)
+# ======================
 @app.get("/emails")
 def get_emails():
-    conn = sqlite3.connect("database.db")
+    conn = sqlite3.connect(DB_PATH)
 
     rows = conn.execute(
         "SELECT * FROM emails ORDER BY id DESC"
