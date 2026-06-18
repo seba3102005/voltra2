@@ -2,6 +2,7 @@ from fastapi import FastAPI, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from jinja2 import Environment, FileSystemLoader
 import sqlite3
 from pathlib import Path
 
@@ -18,9 +19,14 @@ BASE_DIR = Path(__file__).resolve().parent
 DB_PATH = BASE_DIR / "database.db"
 
 # ======================
-# Templates
+# Templates (cache_size=0 fixes Vercel's LRUCache bug)
 # ======================
-templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+env = Environment(
+    loader=FileSystemLoader(str(BASE_DIR / "templates")),
+    auto_reload=True,
+    cache_size=0
+)
+templates = Jinja2Templates(env=env)
 
 # ======================
 # Static files
