@@ -1,10 +1,12 @@
 from fastapi import FastAPI, Form, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from jinja2 import Environment, FileSystemLoader
 import sqlite3
 from pathlib import Path
+
+
 
 app = FastAPI()
 
@@ -67,6 +69,7 @@ def home(request: Request):
 # ======================
 # SUBMIT EMAIL
 # ======================
+
 @app.post("/submit-email")
 def submit_email(request: Request, email: str = Form(...)):
     try:
@@ -79,11 +82,7 @@ def submit_email(request: Request, email: str = Form(...)):
         conn.close()
         return RedirectResponse(url="/result", status_code=303)
     except Exception as e:
-        return templates.TemplateResponse(
-            request=request,
-            name="index.html",
-            context={"error": str(e)}
-        )
+        return PlainTextResponse(str(e), status_code=500)
 # ======================
 # VIEW EMAILS (ADMIN)
 # ======================
