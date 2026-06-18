@@ -68,29 +68,22 @@ def home(request: Request):
 # SUBMIT EMAIL
 # ======================
 @app.post("/submit-email")
-def submit_email(email: str = Form(...)):
-    conn = sqlite3.connect(DB_PATH)
-
-    conn.execute(
-        "INSERT INTO emails (email) VALUES (?)",
-        (email,)
-    )
-
-    conn.commit()
-    conn.close()
-
-    return RedirectResponse(
-        url="/result",
-        status_code=303
-    )
-
-# ======================
-# RESULT PAGE (404 STYLE)
-# ======================
-@app.get("/result", response_class=HTMLResponse)
-def result(request: Request):
-    return templates.TemplateResponse(request=request, name="404.html")
-
+def submit_email(request: Request, email: str = Form(...)):
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        conn.execute(
+            "INSERT INTO emails (email) VALUES (?)",
+            (email,)
+        )
+        conn.commit()
+        conn.close()
+        return RedirectResponse(url="/result", status_code=303)
+    except Exception as e:
+        return templates.TemplateResponse(
+            request=request,
+            name="index.html",
+            context={"error": str(e)}
+        )
 # ======================
 # VIEW EMAILS (ADMIN)
 # ======================
